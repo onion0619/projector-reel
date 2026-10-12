@@ -1,0 +1,72 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Projector Reel config",
+  "type": "object",
+  "required": ["site", "categories", "videos"],
+  "definitions": {
+    "text": {
+      "description": "A string, or one per language: { \"zh\": \"…\", \"en\": \"…\" }",
+      "oneOf": [
+        { "type": "string" },
+        { "type": "object", "properties": { "zh": { "type": "string" }, "en": { "type": "string" } }, "additionalProperties": false }
+      ]
+    }
+  },
+  "properties": {
+    "$schema": { "type": "string" },
+    "site": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "$ref": "#/definitions/text", "description": "Your name or studio name / 你的名字" },
+        "tagline": { "$ref": "#/definitions/text", "description": "Shown next to the name, e.g. Video Works / 影像作品" },
+        "description": { "$ref": "#/definitions/text", "description": "Used for search engines and share cards / 搜索与分享卡片的简介" },
+        "contact": { "type": "string", "description": "Email or a URL / 邮箱或链接" },
+        "url": { "type": "string", "description": "Public site URL, for share-card images. On GitHub Pages it is filled in automatically / 站点地址" },
+        "languages": { "type": "array", "items": { "enum": ["zh", "en"] }, "minItems": 1, "uniqueItems": true },
+        "defaultLang": { "enum": ["zh", "en"], "description": "Served at / ; other languages at /<lang>/" },
+        "shareImage": { "type": "string", "description": "Image for X / WeChat share cards (relative to public/). 1200×630 works best" }
+      },
+      "additionalProperties": false
+    },
+    "categories": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "name"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+          "name": { "$ref": "#/definitions/text" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "videos": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["category", "src"],
+        "properties": {
+          "id": { "type": "string", "description": "Used in share links: /#<id>" },
+          "title": { "$ref": "#/definitions/text", "description": "Optional for YouTube / Bilibili / Vimeo / TikTok / Xinpianchang — fetched automatically" },
+          "category": { "type": "string" },
+          "src": {
+            "description": "mp4 path under public/ (e.g. media/film.mp4), an mp4 URL, or a YouTube / Bilibili / Vimeo / TikTok / Xinpianchang / Douyin link. Use { \"zh\": …, \"en\": … } to serve different sources per language.",
+            "oneOf": [
+              { "type": "string" },
+              { "type": "object", "properties": { "zh": { "type": "string" }, "en": { "type": "string" } }, "additionalProperties": false }
+            ]
+          },
+          "cover": { "type": "string", "description": "Optional. Path under public/ or an image URL. Without it: a frame from the mp4, or the platform's own cover" },
+          "aspect": { "type": ["string", "number"], "description": "Optional, e.g. \"9:16\" or \"3:4\". Detected automatically for mp4" },
+          "link": { "type": "string", "description": "Optional 'open on …' link" },
+          "embed": { "type": "boolean", "description": "Set true if src is any other embeddable player URL" }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

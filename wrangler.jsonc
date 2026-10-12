@@ -1,0 +1,9 @@
+{
+  // 部署到 Cloudflare：npx wrangler login 之后 npm run deploy:cloudflare
+  // 想用自己的域名，取消下面 routes 的注释并改成你的域名（域名需已托管在 Cloudflare）
+  // 注意：Cloudflare 静态资源单个文件上限 25 MiB，更大的视频请放 R2 或其它存储，src 写完整网址
+  "name": "projector-reel",
+  "compatibility_date": "2026-09-01",
+  "assets": { "directory": "./dist" }
+  // "routes": [{ "pattern": "reel.example.com", "custom_domain": true }]
+}

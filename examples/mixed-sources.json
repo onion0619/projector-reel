@@ -1,0 +1,15 @@
+{
+  "site": {
+    "name": "Projector Reel",
+    "tagline": { "zh": "多来源示例", "en": "Mixed sources" },
+    "languages": ["zh", "en"]
+  },
+  "categories": [
+    { "id": "local", "name": { "zh": "本地 mp4", "en": "Local mp4" } },
+    { "id": "platform", "name": { "zh": "平台视频", "en": "Platforms" } }
+  ],
+  "videos": [
+    { "title": { "zh": "没填封面的 mp4", "en": "mp4 without a cover" }, "category": "local", "src": "media/frlive-print-vol2.mp4" },
+    { "category": "platform", "src": "https://www.youtube.com/watch?v=aqz-KE-bpKQ" }
+  ]
+}

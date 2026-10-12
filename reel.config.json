@@ -1,0 +1,43 @@
+{
+  "$schema": "./reel.schema.json",
+  "site": {
+    "name": { "zh": "李复冲", "en": "Li Fuchong" },
+    "tagline": { "zh": "影像作品", "en": "Video Works" },
+    "description": {
+      "zh": "李复冲的 App 宣传片：在一间 3D 放映厅里，点放映机，看片子投上银幕。",
+      "en": "App promo films by Li Fuchong — click the projector in a 3D cinema and watch each film hit the screen."
+    },
+    "contact": "oniontnd@gmail.com",
+    "url": "",
+    "languages": ["zh", "en"],
+    "defaultLang": "zh",
+    "shareImage": "media/share.jpg"
+  },
+  "categories": [
+    { "id": "tongke", "name": { "zh": "同刻", "en": "TongKe" } },
+    { "id": "frlive", "name": "FR live" }
+  ],
+  "videos": [
+    {
+      "id": "tongke-red-bead",
+      "title": { "zh": "同刻 · 红珠子", "en": "TongKe · The Red Bead" },
+      "category": "tongke",
+      "src": "media/tongke-red-bead.mp4",
+      "cover": "media/tongke-red-bead.jpg"
+    },
+    {
+      "id": "frlive-print-vol1",
+      "title": { "zh": "FR live · 一张照片拆开看看", "en": "FR live · One Photo, Taken Apart" },
+      "category": "frlive",
+      "src": "media/frlive-print-vol1.mp4",
+      "cover": "media/frlive-print-vol1.jpg"
+    },
+    {
+      "id": "frlive-print-vol2",
+      "title": { "zh": "FR live · 剩下五种再拆开", "en": "FR live · Five More, Taken Apart" },
+      "category": "frlive",
+      "src": "media/frlive-print-vol2.mp4",
+      "cover": "media/frlive-print-vol2.jpg"
+    }
+  ]
+}
