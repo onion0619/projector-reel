@@ -7,4 +7,6 @@ Updated: 2026-10-12
 - Verified locally with Playwright (Chromium, Metal GPU): desktop 1280×800 and iPhone 13 emulation — browse, mp4 projection with sound, pause, back to booth, language switch, YouTube and Bilibili embeds, build without ffmpeg.
 - Not verified: real iOS Safari / Android devices.
 
-Next: publish the repository and GitHub Pages demo after the author confirms.
+- 2026-10-12 published: public template repo https://github.com/onion0619/projector-reel (marked as template; topics set). GitHub Pages demo https://onion0619.github.io/projector-reel/ (en: /en/) deployed by `.github/workflows/pages.yml`; full flow re-verified against the live site.
+
+Next: optional — bump GitHub Actions to Node 24-based majors when available (runner shows Node 20 deprecation warnings); migrate video.oniontnd.com onto this template.
