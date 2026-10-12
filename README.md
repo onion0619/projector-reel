@@ -1,12 +1,14 @@
-# Projector Reel · 放映厅
+# Screening Room · 放映厅
 
 **中文** · [English](README.en.md)
 
 把你的视频作品集做成一间 3D 放映厅：镜头在放映间里越过放映机看向银幕，点一下放映机——灯亮、片盘转、走过 3-2-1 片头，镜头沿着光束飞到银幕前，影片直接投在银幕上播放。
 
-![预览](docs/preview.gif)
+[![预览：开灯、换片、点放映机后镜头沿光束飞到银幕，影片投在银幕上播放](docs/preview.webp)](docs/preview.mp4)
 
-**在线演示：** https://onion0619.github.io/projector-reel/ （[English](https://onion0619.github.io/projector-reel/en/)）
+<sub>点图看 1080p · 60 帧高清视频（有声）</sub>
+
+**在线演示：** https://onion0619.github.io/screening-room/ （[English](https://onion0619.github.io/screening-room/en/)）
 
 - **mp4 真的投在银幕上**：画面是 3D 银幕上的贴图，光束形状跟着画幅走，银幕反光随画面变色照亮观众席
 - **也支持平台视频**：YouTube、B 站、Vimeo、TikTok、新片场用各自的官方播放器；抖音等不能嵌入的平台显示封面 + 跳转观看
@@ -100,6 +102,15 @@ npm run dev        # 构建并打开 http://localhost:5173
 
 改了配置或代码后重新运行 `npm run dev`。试别的配置：`REEL_CONFIG=examples/mixed-sources.json npm run dev`。
 
+### 给你的放映厅录一段宣传短片
+
+```bash
+npx playwright install chromium   # 第一次需要
+npm run build && npm run record
+```
+
+逐帧渲染出 `docs/preview.mp4`（1920×1080、60 帧、混入原片声音）和 README 用的 `docs/preview.webp`，适合直接发社交平台。竖版：`node scripts/record.mjs --size=1080x1920 --out=docs/preview-vertical.mp4`；其它参数见 `scripts/record.mjs` 开头。需要装 ffmpeg。
+
 | 文件 | 作用 |
 | --- | --- |
 | `reel.config.json` | 唯一需要改的内容配置 |
@@ -108,6 +119,7 @@ npm run dev        # 构建并打开 http://localhost:5173
 | `src/i18n.js` | 界面文字（中 / 英） |
 | `src/style.css` | 叠在 3D 画面上的界面 |
 | `scripts/build.mjs` | 读配置 → 识别来源 → 封面 → 生成各语言页面 → 打包 |
+| `scripts/record.mjs` | 逐帧录制宣传短片（`npm run record`） |
 
 ## 常见问题
 

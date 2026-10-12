@@ -9,4 +9,7 @@ Updated: 2026-10-12
 
 - 2026-10-12 published: public template repo https://github.com/onion0619/projector-reel (marked as template; topics set). GitHub Pages demo https://onion0619.github.io/projector-reel/ (en: /en/) deployed by `.github/workflows/pages.yml`; full flow re-verified against the live site.
 
+- 2026-10-13 renamed: projector-reel → screening-room (repo, Pages URL https://onion0619.github.io/screening-room/, local folder). Old Pages URL no longer serves; GitHub redirects the old repo URL.
+- 2026-10-13 demo media: replaced the blurry real-time GIF/webm with a frame-by-frame recording (`scripts/record.mjs`, `npm run record`): docs/preview.mp4 1080p60 with film audio, docs/preview.webp for the README, new share.jpg. Films now project in true color (bloom off + direct render while rolling, no fog on screen/film layers).
+
 Next: optional — bump GitHub Actions to Node 24-based majors when available (runner shows Node 20 deprecation warnings); migrate video.oniontnd.com onto this template.

@@ -33,6 +33,8 @@ jobs:
           key: reel-cache-${{ hashFiles('reel.config.json') }}
           restore-keys: reel-cache-
       - run: npm ci
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1" # 录制用的浏览器部署时用不到
       - id: pages
         uses: actions/configure-pages@v5
       - run: npm run build

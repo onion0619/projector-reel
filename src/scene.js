@@ -653,7 +653,8 @@ export function createTheater(container, { lowPower }) {
     const strike = state.flash > 0 ? 0.55 + 0.45 * Math.abs(Math.sin(time * 61)) : 1; // 点灯时的电弧闪烁
     const level = state.lamp * strike;
 
-    state.calm += (state.calmTarget - state.calm) * Math.min(1, dt * 1.5);
+    // 收光比开光快：到了银幕前，灰尘和光束一秒内退掉
+    state.calm += (state.calmTarget - state.calm) * Math.min(1, dt * (state.calmTarget < state.calm ? 4 : 1.5));
     beamUniforms.uLevel.value = level * state.calm;
     beamUniforms.uTime.value = time;
     screenMat.color.setScalar(Math.min(0.95, level * 1.35));

@@ -1,12 +1,14 @@
-# Projector Reel
+# Screening Room
 
 [中文](README.md) · **English**
 
 Turn your video portfolio into a 3D cinema. The camera sits in the projection booth, looking past a vintage projector at the screen. Click the projector: the lamp strikes, the reels spin, a 3-2-1 leader rolls, and the camera flies down the beam to the screen, where your film plays.
 
-![Preview](docs/preview.gif)
+[![Preview: the lamp strikes, films change, and after a click on the projector the camera flies down the beam to the screen where the film plays](docs/preview.webp)](docs/preview.mp4)
 
-**Live demo:** https://onion0619.github.io/projector-reel/en/
+<sub>Click for the 1080p · 60 fps video (with sound)</sub>
+
+**Live demo:** https://onion0619.github.io/screening-room/en/
 
 - **mp4 files are projected for real**: the video is a texture on the 3D screen, the beam matches its aspect ratio, and the screen's glow tints the seats with the film's colors
 - **Platform videos work too**: YouTube, Bilibili, Vimeo, TikTok and Xinpianchang via their official players; Douyin and other non-embeddable sites get a cover and a "watch on…" link
@@ -99,6 +101,15 @@ npm run dev        # builds and serves http://localhost:5173
 ```
 
 Run `npm run dev` again after changes. Try another config with `REEL_CONFIG=examples/mixed-sources.json npm run dev`.
+
+### Record a promo clip of your cinema
+
+```bash
+npx playwright install chromium   # first time only
+npm run build && npm run record
+```
+
+Renders `docs/preview.mp4` frame by frame (1920×1080, 60 fps, with the film's sound) plus `docs/preview.webp` for your README, ready to post. Vertical: `node scripts/record.mjs --size=1080x1920 --out=docs/preview-vertical.mp4`; more options at the top of `scripts/record.mjs`. Requires ffmpeg.
 
 ## FAQ
 

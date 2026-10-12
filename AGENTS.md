@@ -1,4 +1,4 @@
-# Projector Reel · notes for AI coding agents
+# Screening Room · notes for AI coding agents
 
 A static 3D video-portfolio template (three.js). Users customize it by editing **`reel.config.json`** only; keep it that way.
 
@@ -20,4 +20,5 @@ A static 3D video-portfolio template (three.js). Users customize it by editing *
 - `scripts/sources.mjs` — link → { kind: video | embed | link, provider, embed URL }.
 - `scripts/media.mjs` — ffprobe/ffmpeg helpers (optional), platform metadata, image sizes.
 - `src/scene.js` — the cinema: projector model, volumetric beam + dust, screen, film layer (VideoTexture), camera flights.
+- `scripts/record.mjs` — frame-by-frame promo recorder (Playwright clock + ffmpeg): `npm run record`.
 - `src/app.js` — reel/strip navigation, play flows (mp4 projection, iframe overlay, link-out), controls, language switch, gestures.

@@ -1,5 +1,5 @@
 {
-  "name": "projector-reel",
+  "name": "screening-room",
   "version": "1.0.0",
   "description": "A 3D cinema video portfolio template: click the projector and fly through the beam into the screen.",
   "private": true,
@@ -8,10 +8,12 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "dev": "node scripts/build.mjs && node scripts/serve.mjs",
-    "deploy:cloudflare": "node scripts/build.mjs && npx -y wrangler@4 deploy"
+    "deploy:cloudflare": "node scripts/build.mjs && npx -y wrangler@4 deploy",
+    "record": "node scripts/record.mjs --webp=docs/preview.webp"
   },
   "devDependencies": {
     "esbuild": "0.24.0",
+    "playwright": "1.61.1",
     "three": "0.170.0"
   },
   "engines": {

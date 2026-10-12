@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Projector Reel config",
+  "title": "Screening Room config",
   "type": "object",
   "required": ["site", "categories", "videos"],
   "definitions": {

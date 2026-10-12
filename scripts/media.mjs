@@ -19,7 +19,7 @@ export function createMedia(root) {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 15000);
     try {
-      return await fetch(url, { ...opts, signal: ctrl.signal, headers: { "User-Agent": "Mozilla/5.0 (projector-reel build)", ...(opts.headers || {}) } });
+      return await fetch(url, { ...opts, signal: ctrl.signal, headers: { "User-Agent": "Mozilla/5.0 (screening-room build)", ...(opts.headers || {}) } });
     } finally {
       clearTimeout(timer);
     }
