@@ -168,13 +168,13 @@ export function createTheater(container, { lowPower }) {
   const screenTex = new THREE.CanvasTexture(screenCanvas);
   screenTex.colorSpace = THREE.SRGBColorSpace;
   screenTex.anisotropy = 4;
-  const screenMat = new THREE.MeshBasicMaterial({ map: screenTex, color: 0x000000, toneMapped: false });
+  const screenMat = new THREE.MeshBasicMaterial({ map: screenTex, color: 0x000000, toneMapped: false, fog: false });
   const screenMesh = new THREE.Mesh(new THREE.PlaneGeometry(SCREEN.w, SCREEN.h), screenMat);
   screenMesh.position.set(SCREEN.x, SCREEN.y, SCREEN.z);
   scene.add(screenMesh);
 
   // 影片层：mp4 直接投放时，视频画面贴在这块和画面区域等大的平面上
-  const filmMat = new THREE.MeshBasicMaterial({ color: 0x000000, toneMapped: false });
+  const filmMat = new THREE.MeshBasicMaterial({ color: 0x000000, toneMapped: false, fog: false }); // 不受雾影响，保持原片亮度
   const filmMesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), filmMat);
   filmMesh.position.set(SCREEN.x, SCREEN.y, SCREEN.z + 0.02);
   filmMesh.visible = false;
@@ -325,15 +325,18 @@ export function createTheater(container, { lowPower }) {
   /* ---------------- 后期：泛光（手机上省掉，直接渲染） ---------------- */
 
   let composer = null;
+  const BLOOM = 0.5; // 放映间里的泛光强度；影片在银幕上走时降到 0，避免亮画面蒙上一层白雾
   let bloom = null;
   if (!lowPower) {
     composer = new EffectComposer(renderer);
     composer.addPass(new RenderPass(scene, camera));
-    bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.55, 0.6, 0.82);
+    bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), BLOOM, 0.6, 0.88);
     composer.addPass(bloom);
     composer.addPass(new OutputPass());
   }
-  const draw = () => (composer ? composer.render() : renderer.render(scene, camera));
+  // 后期管线会对整帧做 ACES 色调映射，白色会被压灰、偏冷；
+  // 影片在银幕上走、泛光已经关掉时直接渲染，影片层（toneMapped: false）就能保持原片颜色
+  const draw = () => (composer && bloom.enabled ? composer.render() : renderer.render(scene, camera));
 
   /* ---------------- 状态 ---------------- */
 
@@ -654,7 +657,14 @@ export function createTheater(container, { lowPower }) {
     beamUniforms.uLevel.value = level * state.calm;
     beamUniforms.uTime.value = time;
     screenMat.color.setScalar(Math.min(0.95, level * 1.35));
-    filmMat.color.setScalar(Math.min(1, level * 1.1));
+    // 影片层开始走片后 0.3 秒内亮到原片亮度，不再跟着灯泡明暗变化
+    state.filmLevel = (state.filmLevel || 0) + ((state.rolling ? 1 : 0) - (state.filmLevel || 0)) * Math.min(1, dt * 8);
+    filmMat.color.setScalar(state.filmLevel);
+    if (bloom) {
+      const target = state.rolling ? 0 : BLOOM;
+      bloom.strength += (target - bloom.strength) * Math.min(1, dt * 3);
+      bloom.enabled = bloom.strength > 0.005;
+    }
     // 影片在走时，银幕反光跟着画面变色
     if (state.rolling && state.video && time > state.sampleAt) {
       state.sampleAt = time + 0.25;
@@ -810,7 +820,7 @@ export function createTheater(container, { lowPower }) {
       clatter(2.9);
       onArrive = () => {
         // 影片直接投在银幕上时，光束和灰尘收得更淡，免得飘在画面前
-        state.calmTarget = state.video ? 0.04 : 0.12;
+        state.calmTarget = state.video ? 0 : 0.12;
         onReady();
       };
       flyTo("screen", 2900);

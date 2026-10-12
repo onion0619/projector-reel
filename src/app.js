@@ -169,14 +169,18 @@ const play = () => {
     video.src = url(s.src);
     document.body.appendChild(video);
     bindVideo(video);
-    video.play().then(() => {
-      if (phase === "flying-in") {
-        video.pause();
-        video.currentTime = 0;
+    const film = video;
+    let rolled = false;
+    // 解锁用的这次 play 可能在倒计时结束后才返回（视频加载慢），那时片子已经开始放了，不能再暂停
+    film.play().then(() => {
+      if (!rolled) {
+        film.pause();
+        film.currentTime = 0;
       }
     }).catch(() => {});
     const roll = () => {
       if (!video) return;
+      rolled = true;
       video.currentTime = 0;
       video.play().catch(() => {
         // 浏览器不允许有声自动播放：先静音放，给一个开声音的按钮
