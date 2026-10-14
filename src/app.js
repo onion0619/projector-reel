@@ -1,4 +1,3 @@
-import { createTheater } from "./scene.js";
 import { STRINGS } from "./i18n.js";
 
 const DATA = JSON.parse(document.getElementById("reel-data").textContent);
@@ -41,16 +40,14 @@ const catName = (id) => categories.find((c) => c.id === id)?.name[lang] ?? id;
 
 /* ---------- 3D 放映厅（不支持 WebGL 时退回平面银幕） ---------- */
 
+// 3D 部分（three.js）是单独的分包：界面先能用，放映厅在后台下载好再淡入。
+// 下载期间用当前封面铺一层虚化的“预映”背景；这期间点放映会先记下，3D 就绪后自动开始。
+performance.mark("sr:app-start");
 let theater = null;
-try {
-  theater = createTheater(stage, { lowPower });
-  theater.start(reduceMotion);
-  theater.ignite(reduceMotion ? 0 : 700);
-  if (new URLSearchParams(location.search).has("debug")) window.__theater = theater;
-} catch (err) {
-  console.warn("WebGL 不可用，使用平面模式", err);
-  root.classList.add("no-webgl");
-}
+let theaterLoading = true;
+let pendingPlay = false;
+const preshow = $(".preshow");
+const setPreshow = (src) => { if (preshow && src) preshow.style.backgroundImage = `url("${src}")`; };
 
 const images = new Map();
 const loadImage = (src) => {
@@ -146,6 +143,11 @@ const arrive = () => {
 
 const play = () => {
   if (phase !== "booth") return;
+  if (!theater && theaterLoading) {
+    pendingPlay = true;
+    root.classList.add("is-warming");
+    return;
+  }
   const v = reel[cur];
   const s = source(v);
 
@@ -361,13 +363,16 @@ const show = (i, { instant = false, defer = false } = {}) => {
         if (w && h) v.aspect = w / h;
       }
       if (theater) theater.load(v, img, { instant, title: v.title[lang] });
+      else if (theaterLoading) setPreshow(img?.src);
       else stage.style.backgroundImage = img?.src ? `url("${img.src}")` : "";
     });
   };
   if (defer) loadTimer = setTimeout(load, 160);
   else load();
-  // 预取相邻两条的封面
-  [i - 1, i + 1].forEach((j) => reel[j]?.cover && loadImage(url(reel[j].cover)).catch(() => {}));
+  // 预取相邻两条的封面；首屏还没好时先不抢带宽
+  setTimeout(() => {
+    [i - 1, i + 1].forEach((j) => reel[j]?.cover && loadImage(url(reel[j].cover)).catch(() => {}));
+  }, root.classList.contains("is-ready") ? 0 : 2500);
 };
 
 /* ---------- 语言切换 ---------- */
@@ -567,7 +572,7 @@ const toNdc = (e) => {
   return { x: ((e.clientX - r.left) / r.width) * 2 - 1, y: -((e.clientY - r.top) / r.height) * 2 + 1 };
 };
 
-if (theater) {
+function bindStage() {
   let hoverFrame = 0;
   stage.addEventListener("pointermove", (e) => {
     if (e.pointerType !== "mouse") return;
@@ -665,3 +670,33 @@ measure();
 const fromHash = reel.findIndex((v) => `#${v.id}` === location.hash);
 goTo(fromHash === -1 ? 0 : fromHash, false);
 if (fromHash === -1) setHash("");
+
+/* ---------- 加载 3D 放映厅 ---------- */
+
+import("./scene.js")
+  .then(({ createTheater }) => {
+    const t = createTheater(stage, { lowPower });
+    performance.mark("sr:scene-built");
+    t.start(reduceMotion);
+    theater = t;
+    if (new URLSearchParams(location.search).has("debug")) window.__theater = t;
+    bindStage();
+    // 把当前这一条装进放映机，然后点灯
+    const v = reel[cur];
+    coverOf(v).then((img) => { if (reel[cur] === v) t.load(v, img, { instant: true, title: v.title[lang] }); });
+    t.ignite(reduceMotion ? 0 : 250);
+    requestAnimationFrame(() => requestAnimationFrame(() => root.classList.add("is-ready")));
+  })
+  .catch((err) => {
+    console.warn("3D 放映厅不可用，使用平面模式", err);
+    root.classList.add("no-webgl", "is-ready");
+    if (cur >= 0) coverOf(reel[cur]).then((img) => { stage.style.backgroundImage = img?.src ? `url("${img.src}")` : ""; });
+  })
+  .finally(() => {
+    theaterLoading = false;
+    root.classList.remove("is-warming");
+    if (pendingPlay) {
+      pendingPlay = false;
+      play();
+    }
+  });

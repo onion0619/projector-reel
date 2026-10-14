@@ -1,5 +1,6 @@
 // 本地预览 dist/：npm run dev，然后打开 http://localhost:5173
-import { createReadStream, existsSync, statSync } from "node:fs";
+import { createReadStream, existsSync, readFileSync, statSync } from "node:fs";
+import { gzipSync } from "node:zlib";
 import { createServer } from "node:http";
 import { extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -22,6 +23,12 @@ export function serve(port = 5173) {
       const end = range[2] ? Number(range[2]) : size - 1;
       res.writeHead(206, { "Content-Type": type, "Content-Range": `bytes ${start}-${end}/${size}`, "Accept-Ranges": "bytes", "Content-Length": end - start + 1 });
       return createReadStream(file, { start, end }).pipe(res);
+    }
+    // 文本类文件 gzip 压缩，和 GitHub Pages / Cloudflare 的线上行为一致
+    if (/text|javascript|json|svg/.test(type) && /gzip/.test(req.headers["accept-encoding"] || "")) {
+      const body = gzipSync(readFileSync(file));
+      res.writeHead(200, { "Content-Type": type, "Content-Encoding": "gzip", "Content-Length": body.length });
+      return res.end(body);
     }
     res.writeHead(200, { "Content-Type": type, "Content-Length": size, "Accept-Ranges": "bytes" });
     createReadStream(file).pipe(res);

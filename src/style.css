@@ -35,7 +35,17 @@ button { font: inherit; color: inherit; }
 
 /* 3D 场景铺满整个视口，界面浮在上面 */
 .scene { position: fixed; inset: 0; touch-action: none; -webkit-tap-highlight-color: transparent; }
-.scene canvas { display: block; width: 100%; height: 100%; }
+.scene canvas { display: block; width: 100%; height: 100%; opacity: 0; transition: opacity .9s ease; }
+.is-ready .scene canvas { opacity: 1; }
+/* 预映：3D 还在下载时，用当前封面铺一层虚化背景，打开页面立刻有画面 */
+.preshow {
+  position: fixed; inset: -6%; background: #040302 center / cover no-repeat;
+  filter: blur(30px) brightness(0.3) saturate(1.1);
+  transition: opacity 1s ease;
+}
+.is-ready .preshow { opacity: 0; pointer-events: none; }
+.is-warming .hud-play { animation: warming 1s ease-in-out infinite; }
+@keyframes warming { 50% { box-shadow: 0 0 0 8px rgba(233, 178, 76, 0.18); } }
 .no-webgl .scene { background: #000 center / contain no-repeat; filter: brightness(.7); }
 .vignette {
   position: fixed; inset: 0; pointer-events: none;

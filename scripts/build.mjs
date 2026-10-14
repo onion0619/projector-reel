@@ -117,10 +117,17 @@ for (const [i, v] of ordered.entries()) {
   // 实在不知道就先按 16:9（抖音按 9:16），浏览器拿到画面后再按真实尺寸校正
   const aspect = known ?? (primary.provider === "douyin" ? 9 / 16 : 16 / 9);
 
+  // 网页里实际加载的是压缩过的 WebP：银幕封面最长边 1280，胶片小图 360 宽；不能转换时用原图
   let thumbOut;
   if (coverFile) {
-    thumbOut = `covers/thumb/${id}.jpg`;
-    media.makeThumb(coverFile, join(dist, thumbOut), media.imageAspect(coverFile));
+    const web = `covers/${id}.webp`;
+    if (media.toWebp(coverFile, join(dist, web), { size: 1280, quality: 80 })) coverOut = web;
+    const thumb = `covers/thumb/${id}.webp`;
+    if (media.toWebp(coverFile, join(dist, thumb), { size: 360, quality: 74, cover: true })) thumbOut = thumb;
+    else {
+      thumbOut = `covers/thumb/${id}.jpg`;
+      media.makeThumb(coverFile, join(dist, thumbOut), media.imageAspect(coverFile));
+    }
   }
 
   const title = v.title ?? platform.title ?? id;
@@ -138,12 +145,14 @@ for (const [i, v] of ordered.entries()) {
 }
 if (!hasFfmpeg) console.log("  （没装 ffmpeg：未填封面的视频会在浏览器里截帧，胶片小图直接用原封面）");
 
-/* ---------- 打包脚本（文件名带内容 hash） ---------- */
+/* ---------- 打包脚本（文件名带内容 hash；three.js 拆成单独分包，界面先到先能用） ---------- */
 
 const bundle = await build({
   entryPoints: [join(root, "src", "app.js")],
   outdir: join(dist, "assets"),
   entryNames: "app-[hash]",
+  chunkNames: "chunk-[hash]",
+  splitting: true,
   bundle: true,
   minify: true,
   format: "esm",
@@ -151,8 +160,12 @@ const bundle = await build({
   legalComments: "none",
   metafile: true,
 });
-const [outPath, outMeta] = Object.entries(bundle.metafile.outputs)[0];
-const appFile = `assets/${outPath.split("/").pop()}`;
+const outputs = Object.entries(bundle.metafile.outputs).filter(([p]) => p.endsWith(".js"));
+const fileOf = (p) => `assets/${p.split("/").pop()}`;
+// 动态 import 的 scene.js 在 esbuild 里也算“入口”，所以按文件名区分：app.js 是主入口，其它都是分包
+const appFile = fileOf(outputs.find(([, m]) => m.entryPoint?.endsWith("src/app.js"))[0]);
+const chunkFiles = outputs.map(([p]) => fileOf(p)).filter((f) => f !== appFile);
+const kb = (p) => `${(outputs.find(([o]) => fileOf(o) === p)[1].bytes / 1024).toFixed(0)} KB`;
 const css = readFileSync(join(root, "src", "style.css"), "utf8");
 
 /* ---------- 每种语言一个页面 ---------- */
@@ -229,9 +242,12 @@ const renderPage = (lang) => {
   ${shareImage ? `<meta name="twitter:image" content="${esc(abs(shareImage))}">` : ""}
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23040302'/%3E%3Cpath d='M12 9v14l11-7z' fill='%23e9b24c'/%3E%3C/svg%3E">
   <link rel="modulepreload" href="${base}${appFile}">
+  ${chunkFiles.map((c) => `<link rel="modulepreload" href="${base}${c}">`).join("\n  ")}
+  ${first.cover ? `<link rel="preload" as="image" href="${base}${first.cover}" fetchpriority="high">` : ""}
   <style>${css}</style>
 </head>
 <body>
+  <div class="preshow" aria-hidden="true"${first.cover ? ` style="background-image:url('${base}${first.cover}')"` : ""}></div>
   <div class="scene" aria-hidden="true"></div>
   <div class="vignette" aria-hidden="true"></div>
 
@@ -293,4 +309,4 @@ for (const lang of langs) {
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, "index.html"), renderPage(lang));
 }
-console.log(`\n✓ dist/ · ${reel.length} 条视频 · ${langs.map((l) => `/${pagePath(l)}`).join(" ")} · ${appFile} ${(outMeta.bytes / 1024).toFixed(0)} KB`);
+console.log(`\n✓ dist/ · ${reel.length} 条视频 · ${langs.map((l) => `/${pagePath(l)}`).join(" ")} · ${appFile} ${kb(appFile)} + ${chunkFiles.map((c) => `${c.replace("assets/", "")} ${kb(c)}`).join(" + ")}`);

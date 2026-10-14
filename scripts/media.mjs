@@ -139,5 +139,19 @@ export function createMedia(root) {
     copyFileSync(input, out);
   };
 
-  return { providerMeta, downloadImage, probeVideo, imageAspect, extractFrame, makeThumb, fitImage };
+  /**
+   * 网页用的 WebP：fit = 最长边不超过 size；cover = 铺满 size×(size*3/4) 的胶片画格
+   * 没有 ffmpeg 或编码失败时返回 false，调用方退回原图
+   */
+  const toWebp = (input, out, { size, quality, cover = false }) => {
+    if (!hasFfmpeg) return false;
+    ensureDir(out);
+    const vf = cover
+      ? `scale=${size}:${Math.round((size * 3) / 4)}:force_original_aspect_ratio=increase`
+      : `scale='min(iw,${size})':'min(ih,${size})':force_original_aspect_ratio=decrease`;
+    const r = run("ffmpeg", ["-v", "error", "-y", "-i", input, "-vf", vf, "-frames:v", "1", "-c:v", "libwebp", "-quality", String(quality), "-compression_level", "6", out]);
+    return r.status === 0 && existsSync(out);
+  };
+
+  return { providerMeta, downloadImage, probeVideo, imageAspect, extractFrame, makeThumb, fitImage, toWebp };
 }

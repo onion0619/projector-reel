@@ -3,13 +3,13 @@
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
-import { RectAreaLightUniformsLib } from "three/addons/lights/RectAreaLightUniformsLib.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 
+const SCREEN_GLOW = 45; // 银幕反光强度
 export const SCREEN = { x: 0, y: 1.25, z: -30, w: 13.6, h: 7.65 };
 const LENS = new THREE.Vector3(0.05, 1.2, -0.66);
 
@@ -27,13 +27,14 @@ export function createTheater(container, { lowPower }) {
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   container.appendChild(renderer.domElement);
 
-  RectAreaLightUniformsLib.init();
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x040302);
   scene.fog = new THREE.FogExp2(0x040302, 0.022);
   const pmrem = new THREE.PMREMGenerator(renderer);
+  performance.mark("sr:env-start");
   scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+  performance.mark("sr:env-done");
   scene.environmentIntensity = 0.16;
 
   const camera = new THREE.PerspectiveCamera(40, 1, 0.05, 120);
@@ -57,10 +58,11 @@ export function createTheater(container, { lowPower }) {
   scene.add(rim);
 
   // 银幕反光：颜色取当前影片封面的平均色，照亮座椅、幕布和放映机正面
-  const screenLight = new THREE.RectAreaLight(0xffffff, 0, SCREEN.w, SCREEN.h);
-  screenLight.position.set(SCREEN.x, SCREEN.y, SCREEN.z + 0.05);
-  screenLight.lookAt(0, SCREEN.y, 0);
-  scene.add(screenLight);
+  // 用一盏宽角度聚光灯模拟银幕反光（面光源 RectAreaLight 需要 240KB 的查找表，太拖加载）
+  const screenLight = new THREE.SpotLight(0xffffff, 0, 60, 1.15, 1, 0.9);
+  screenLight.position.set(SCREEN.x, SCREEN.y, SCREEN.z + 0.6);
+  screenLight.target.position.set(0, -1.5, 0);
+  scene.add(screenLight, screenLight.target);
 
   // 镜头口的灯光
   const lensLight = new THREE.PointLight(0xffd9a0, 0, 2.2, 2);
@@ -376,8 +378,6 @@ export function createTheater(container, { lowPower }) {
     c[1].set(r.x + r.w / 2, r.y - r.h / 2, r.z);
     c[2].set(r.x + r.w / 2, r.y + r.h / 2, r.z);
     c[3].set(r.x - r.w / 2, r.y + r.h / 2, r.z);
-    screenLight.width = r.w;
-    screenLight.height = r.h;
     filmMesh.scale.set(r.w, r.h, 1);
   };
 
@@ -675,7 +675,7 @@ export function createTheater(container, { lowPower }) {
         state.sampleAt = Infinity; // 跨域视频不能读像素，就保持封面的颜色
       }
     }
-    screenLight.intensity = level * 7;
+    screenLight.intensity = level * SCREEN_GLOW;
     lensLight.intensity = level * 1.6;
     projector.setLamp(level);
     projector.spin(state.reelSpeed * dt);
@@ -732,7 +732,9 @@ export function createTheater(container, { lowPower }) {
       else camera.clearViewOffset();
     }
 
+    if (!state.drawn) performance.mark("sr:first-draw-start");
     draw();
+    if (!state.drawn) { state.drawn = true; performance.mark("sr:first-frame"); } // 计时点：首帧（调试加载速度用）
     // 到达回调放在渲染之后，此时相机矩阵已是最终机位，播放器能精确盖住银幕
     if (arrived) {
       const cb = arrived;
@@ -754,7 +756,7 @@ export function createTheater(container, { lowPower }) {
         const b = pose.booth;
         camera.position.copy(b.pos).add(new THREE.Vector3(-0.9, 0.5, 2.6));
         cam.look.copy(b.look).add(new THREE.Vector3(-1.5, 0.6, 0));
-        flyTo("booth", 3200, [b.pos.clone().add(new THREE.Vector3(-0.35, 0.18, 1.0))]);
+        flyTo("booth", 2600, [b.pos.clone().add(new THREE.Vector3(-0.35, 0.18, 1.0))]);
       }
       tick();
     },
@@ -773,6 +775,7 @@ export function createTheater(container, { lowPower }) {
     // 换片：片盘倒转一下，灯光一暗，画面换掉
     load(item, image, { instant = false, title = "" } = {}) {
       const swap = () => {
+        if (image && !performance.getEntriesByName("sr:cover").length) performance.mark("sr:cover");
         state.aspect = item.aspect || 16 / 9;
         state.image = image;
         state.title = title;
